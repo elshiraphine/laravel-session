@@ -6,10 +6,10 @@ Kelompok 13 <br />
 2. Elshe Erviana Angely 5025201050
 
 ## Daftar Isi
-- [Migration pada Database]()
-- [Controller]()
-- [View]()
-- [Route]()
+- [Migration pada Database](https://github.com/UrSourceCode/laravel-session#migration-pada-database)
+- [Controller](https://github.com/UrSourceCode/laravel-session#controller)
+- [View](https://github.com/UrSourceCode/laravel-session#view)
+- [Route](https://github.com/UrSourceCode/laravel-session#route)
 
 ## Studi Kasus
 Dalam project session ini, kelompok kami mengambil studi kasus berupa login dan register yang sessionnya akan disimpan dalam database.
