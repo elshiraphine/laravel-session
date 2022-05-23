@@ -1,64 +1,169 @@
-<p align="center"><a href="https://laravel.com" target="_blank"><img src="https://raw.githubusercontent.com/laravel/art/master/logo-lockup/5%20SVG/2%20CMYK/1%20Full%20Color/laravel-logolockup-cmyk-red.svg" width="400"></a></p>
+# Laravel Session dengan Login
 
-<p align="center">
-<a href="https://travis-ci.org/laravel/framework"><img src="https://travis-ci.org/laravel/framework.svg" alt="Build Status"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/dt/laravel/framework" alt="Total Downloads"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/v/laravel/framework" alt="Latest Stable Version"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/l/laravel/framework" alt="License"></a>
-</p>
+## Anggota Kelompok
+Kelompok 13 <br />
+1. Erki Kadhafi Rosyid 05111940000050
+2. Elshe Erviana Angely 5025201050
 
-## About Laravel
+## Daftar Isi
+- [Migration pada Database]()
+- [Controller]()
+- [View]()
+- [Route]()
 
-Laravel is a web application framework with expressive, elegant syntax. We believe development must be an enjoyable and creative experience to be truly fulfilling. Laravel takes the pain out of development by easing common tasks used in many web projects, such as:
+## Studi Kasus
+Dalam project session ini, kelompok kami mengambil studi kasus berupa login dan register yang sessionnya akan disimpan dalam database.
+### Migration pada Database
+1. Langkah pertama dalam pembuatan project ini adalah mengatur file `.env`. dengan mengganti nama database sesuai yang sudah dibuat dalam phpmyadmin.
+    ```txt
+    DB_DATABASE=[nama-database]
+    ```
+2. Langkah kedua adalah membuat model dan migration dengan perintah berikut pada terminal:
+    ```
+    php artisan make:model User
+    ```
+3. Langkah ketiga adalah mengisi `\app\Models\User.php` sebagai berikut
+    ```php
+    protected $fillable = [
+        'name', 'email', 'password',
+    ];
 
-- [Simple, fast routing engine](https://laravel.com/docs/routing).
-- [Powerful dependency injection container](https://laravel.com/docs/container).
-- Multiple back-ends for [session](https://laravel.com/docs/session) and [cache](https://laravel.com/docs/cache) storage.
-- Expressive, intuitive [database ORM](https://laravel.com/docs/eloquent).
-- Database agnostic [schema migrations](https://laravel.com/docs/migrations).
-- [Robust background job processing](https://laravel.com/docs/queues).
-- [Real-time event broadcasting](https://laravel.com/docs/broadcasting).
+    protected $hidden = [
+        'password', 'remember_token',
+    ];
 
-Laravel is accessible, powerful, and provides tools required for large, robust applications.
+    protected $casts = [
+        'email_verified_at' => 'datetime',
+    ];
+    ```
+4. Langkah ketiga adalah mengisi `\database\migrations\` pada file `create_users_table`
+    ```php
+    public function up()
+    {
+        // Isian dimulai pada bagian ini:
+        Schema::create('users', function (Blueprint $table) {
+            $table->increments('id');
+            $table->string('name');
+            $table->string('email')->unique();
+            $table->timestamp('email_verified_at')->nullable();
+            $table->string('password');
+            $table->rememberToken();
+            $table->timestamps();
+        });
+    }
+    ```
+5. Langkah keempat adalah melakukan migrasi tabel ke database dengan perintah
+    ```
+    php artisan migrate:fresh
+    ```
 
-## Learning Laravel
+### Controller 
+Selanjutnya adalah membuat controller. <br />
+1. Langkah pertama adalah membuat controller yaitu `UserController` dengan perintah
+    ```
+    php artisan make:controller UserController
+    ```
 
-Laravel has the most extensive and thorough [documentation](https://laravel.com/docs) and video tutorial library of all modern web application frameworks, making it a breeze to get started with the framework.
+2. Pada `\app\Http\Controllers\UserController` ditambahkan controller
+    ```php
+    public function index()
+    {
+        return view('registration'); // user melakukan registrasi
+    }
 
-If you don't feel like reading, [Laracasts](https://laracasts.com) can help. Laracasts contains over 2000 video tutorials on a range of topics including Laravel, modern PHP, unit testing, and JavaScript. Boost your skills by digging into our comprehensive video library.
+    public function userPostRegistration(Request $request)
+    {
+        // validasi input pada field
+        $request->validate([
+            'name' => 'required',
+            'email' => 'required|email|unique:users',
+            'password' => 'required|min:6',
+        ]);
 
-## Laravel Sponsors
+        $input = $request->all();
 
-We would like to extend our thanks to the following sponsors for funding Laravel development. If you are interested in becoming a sponsor, please visit the Laravel [Patreon page](https://patreon.com/taylorotwell).
+        // membuat inputArray untuk menyimpan password dalam bentuk Hash
+        $inputArray = array(
+            'name' => $request->name,
+            'email' => $request->email,
+            'password' => Hash::make($request->password)
+        );
 
-### Premium Partners
+        // register user
+        $user = User::create($inputArray);
+        $email = User::where('email', $request['email'])->first();
 
-- **[Vehikl](https://vehikl.com/)**
-- **[Tighten Co.](https://tighten.co)**
-- **[Kirschbaum Development Group](https://kirschbaumdevelopment.com)**
-- **[64 Robots](https://64robots.com)**
-- **[Cubet Techno Labs](https://cubettech.com)**
-- **[Cyber-Duck](https://cyber-duck.co.uk)**
-- **[Many](https://www.many.co.uk)**
-- **[Webdock, Fast VPS Hosting](https://www.webdock.io/en)**
-- **[DevSquad](https://devsquad.com)**
-- **[Curotec](https://www.curotec.com/services/technologies/laravel/)**
-- **[OP.GG](https://op.gg)**
-- **[WebReinvent](https://webreinvent.com/?utm_source=laravel&utm_medium=github&utm_campaign=patreon-sponsors)**
-- **[Lendio](https://lendio.com)**
+        // menggunakan flash message sukses ketika user berhasil dibuat
+        if (!is_null($user)) {
+            return back()->with('success', 'You have registered successfully.');
+        }
 
-## Contributing
+        // jika tidak akan mereturn error
+        else {
+            return back()->with('error', 'Whoops! some error encountered. Please try again.');
+        }
+    }
 
-Thank you for considering contributing to the Laravel framework! The contribution guide can be found in the [Laravel documentation](https://laravel.com/docs/contributions).
+    public function userLoginIndex()
+    {
+        return view('login'); // user login view
+    }
 
-## Code of Conduct
+    public function userPostLogin(Request $request)
+    {
 
-In order to ensure that the Laravel community is welcoming to all, please review and abide by the [Code of Conduct](https://laravel.com/docs/contributions#code-of-conduct).
+        $request->validate([
+            "email"           =>    "required|email",
+            "password"        =>    "required|min:6"
+        ]);
 
-## Security Vulnerabilities
+        $userCredentials = $request->only('email', 'password');
+        // menyimpan request dalam kredensial, hanya email dan passsword
 
-If you discover a security vulnerability within Laravel, please send an e-mail to Taylor Otwell via [taylor@laravel.com](mailto:taylor@laravel.com). All security vulnerabilities will be promptly addressed.
+        // melakukan pengecekan user dengan Auth, mulai membuat session setelah redirect->intended
+        if (Auth::attempt($userCredentials)) {
+            return redirect()->intended('dashboard');
+        } else {
+            return back()->with('error', 'Whoops! invalid username or password.');
+        }
+    }
 
-## License
+    public function dashboard()
+    {
 
-The Laravel framework is open-sourced software licensed under the [MIT license](https://opensource.org/licenses/MIT).
+        // cmengecek apabila user login maka akan mereturn view dashboard dengan auth
+        if (Auth::check()) {
+            return view('dashboard');
+        }
+
+        return redirect::to("user-login")->withSuccess('Oopps! You do not have access');
+    }
+
+    // user melakukan logout dan mendestroy session
+    public function logout(Request $request)
+    {
+        $request->session()->flush();
+        Auth::logout();
+        return Redirect('user-login');
+    }
+    ```
+
+
+### View
+Setelah membuat controller akan dibuat view. View secara lengkap dapat diakses pada: [\resources\views](https://github.com/UrSourceCode/laravel-session/tree/main/resources/views)
+
+### Route
+Langkah selanjutnya adalah membuat route yaitu sebagai berikut:
+```php
+Route::get('/user-registration', [UserController::class, 'index'])->name('user.registration');
+
+Route::post('/user-store', [UserController::class, 'userPostRegistration']);
+
+Route::get('/user-login', [UserController::class, 'userLoginIndex']);
+
+Route::post('/login', [UserController::class, 'userPostLogin']);
+
+Route::get('/dashboard', [UserController::class, 'dashboard']);
+
+Route::get('/logout', [UserController::class, 'logout']);
+```
